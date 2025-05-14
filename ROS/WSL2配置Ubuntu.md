@@ -124,7 +124,7 @@ nvidia-smi
 
 `Linux` $\rightarrow$ `x86_64` $\rightarrow$ `WSL-Ubuntu` $\rightarrow$ `2.0` $\rightarrow$ `deb(local)`
 
-选取完成后，该界面会更新安装指令(**注意：请按照你的版本信息进行指令安装，下面的指令不一定适用**)
+选取完成后，该界面会更新安装指令(**⚠️注意：请按照你的版本信息进行指令安装，下面的指令不一定适用**)
 
 ```shell
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
@@ -138,7 +138,7 @@ sudo apt-get -y install cuda-toolkit-12-9
 
 #### 更新 `.bashrc`
 
-`.bashrc`加入下述代码(**注意：请按照你的CUDA版本进行修改**)
+`.bashrc`加入下述代码(**⚠️注意：请按照你的CUDA版本进行修改**)
 
 ```shell
 export PATH="$PATH:/usr/local/cuda-12.9/bin"
@@ -167,4 +167,103 @@ Built on Sun_Jul_28_19:07:16_PDT_2019
 Cuda compilation tools, release 10.1, V10.1.243
 ```
 即安装成功。
+
+## 安装 Anaconda
+
+### 参考
+
+[从零开始配置WSL2下的Python开发环境，看这一篇就够了](https://ymzhangcs.com/posts/wsl-configuration/)
+
+### 下载安装包
+
+**⚠️注意：系统未换源请先进行换源**
+
+```shell
+cd ~
+wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.2.0-Linux-x86_64.sh
+```
+
+🎗️出现 `ERROR 403: Forbidden.`  **尝试以下输入，正常下载跳过这一步**
+> [使用wget报错403](https://blog.csdn.net/m0_46225620/article/details/133769790)
+>```shell
+>wget --user-agent="Mozilla" https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.2.0-Linux-x86_64.sh
+>```
+
+### 安装
+
+```shell
+bash Anaconda3-5.2.0-Linux-x86_64.sh
+```
+
+有提示按 `Enter` 或者 输入 `yes`
+
+### 配置 Anaconda 国内镜像源
+
+```shell
+code ~/.condarc
+```
+🎗️ **WSL2的Ubuntu文件可以自己用windows文件资源管理器打开并修改**
+
+替换成以下内容
+
+```shell
+channels:
+  - defaults
+show_channel_urls: true
+default_channels:
+  - http://mirrors.aliyun.com/anaconda/pkgs/main
+  - http://mirrors.aliyun.com/anaconda/pkgs/r
+  - http://mirrors.aliyun.com/anaconda/pkgs/msys2
+custom_channels:
+  conda-forge: http://mirrors.aliyun.com/anaconda/cloud
+  msys2: http://mirrors.aliyun.com/anaconda/cloud
+  bioconda: http://mirrors.aliyun.com/anaconda/cloud
+  menpo: http://mirrors.aliyun.com/anaconda/cloud
+  pytorch: http://mirrors.aliyun.com/anaconda/cloud
+  simpleitk: http://mirrors.aliyun.com/anaconda/cloud
+```
+
+### 测试是否安装成功
+
+**⚠️注意：关闭原来终端，使用新终端进行测试**
+
+```shell
+conda --version
+```
+
+终端返回版本号即安装成功。
+
+### `Anaconda`替换本地 `python` 环境引起的问题及解决方案
+
+#### `ROS:ModuleNotFoundError: No module named ‘rospkg‘`
+
+[ROS:ModuleNotFoundError: No module named 'rospkg'](https://blog.csdn.net/qq_42995327/article/details/119357775)
+
+ROS中原先的一些 `package` 在 `Anaconda`没有安装，使用以下指令安装即可
+
+> 未安装 `pip` 首先安装 `sudo apt install pip`
+> 永久换源
+> ```shell
+> cd ~
+> mkdir .pip
+> cd .pip
+> touch pip.conf
+> code pip.conf
+> ```
+>
+> 以下内容放入 `pip.conf` 中
+> ```shell
+> [global]
+> index-url=https://mirrors.aliyun.com/pypi/simple/
+> timeout = 6000
+> [install]
+> trusted-host=pypi.tuna.tsinghua.edu.cn
+> disable-pip-version-check = true
+> ```
+
+指令安装 
+
+```shell
+pip install catkin-tools rospkg pyyaml empy numpy defusedxml
+```
 
