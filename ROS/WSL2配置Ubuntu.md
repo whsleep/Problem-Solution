@@ -213,6 +213,8 @@ code ~/.condarc
 
 替换成以下内容
 
+使用[Anaconda 软件仓库镜像使用帮助](https://help.mirrors.cernet.edu.cn/anaconda/)选取合适的内容覆盖 `.condarc`
+
 ```shell
 channels:
   - defaults
