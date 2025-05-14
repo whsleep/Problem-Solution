@@ -6,25 +6,29 @@
 
 [从零开始配置WSL2下的Python开发环境，看这一篇就够了](https://ymzhangcs.com/posts/wsl-configuration/)
 
+### 如何卸载
+
+[Unbuntu卸载anaconda(最新最全亲测)](https://blog.csdn.net/KIK9973/article/details/118795049)
+
 ### 下载安装包
 
 **⚠️注意：系统未换源请先进行换源**
 
 ```shell
 cd ~
-wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.2.0-Linux-x86_64.sh
+wget https://mirrors.pku.edu.cn/anaconda/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
 ```
 
 🎗️出现 `ERROR 403: Forbidden.`  **尝试以下输入，正常下载跳过这一步**
 > [使用wget报错403](https://blog.csdn.net/m0_46225620/article/details/133769790)
 >```shell
->wget --user-agent="Mozilla" https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.2.0-Linux-x86_64.sh
+>wget --user-agent="Mozilla" https://mirrors.pku.edu.cn/anaconda/archive/Anaconda3-2024.10-1-Linux-x86_64.sh
 >```
 
 ### 安装
 
 ```shell
-bash Anaconda3-5.2.0-Linux-x86_64.sh
+bash Anaconda3-2024.10-1-Linux-x86_64.sh
 ```
 
 有提示按 `Enter` 或者 输入 `yes`
@@ -45,17 +49,17 @@ channels:
   - defaults
 show_channel_urls: true
 default_channels:
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r
-  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2
+  - https://mirrors.pku.edu.cn/anaconda/pkgs/main
+  - https://mirrors.pku.edu.cn/anaconda/pkgs/r
+  - https://mirrors.pku.edu.cn/anaconda/pkgs/msys2
 custom_channels:
-  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
-  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  conda-forge: https://mirrors.pku.edu.cn/anaconda/cloud
+  pytorch: https://mirrors.pku.edu.cn/anaconda/cloud
 ```
 
 ### 添加环境变量 
 
-**⚠️注意：请使用自己的 `anaconda3` 路径**
+**⚠️注意：请使用自己的 `anaconda3` 路径，如果已添加可跳过这一步**
 
 ```shell
 echo 'export PATH="/your_path/anaconda3/bin:$PATH"' >> ~/.bashrc
