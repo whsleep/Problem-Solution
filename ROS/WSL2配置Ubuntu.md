@@ -18,6 +18,11 @@ wsl --shutdown
 
 安装较为简易，不再赘述，
 
+#### `wsl: 检测到 localhost 代理配置，但未镜像到 WSL。NAT 模式下的 WSL 不支持 localhost 代理。`
+
+采取[wsl: 检测到 localhost 代理配置，但未镜像到 WSL。NAT 模式下的 WSL 不支持 localhost 代理。](https://gitcode.csdn.net/65e83c781a836825ed78af39.html?dp_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MTgzNDk0OSwiZXhwIjoxNzM1NjExODU4LCJpYXQiOjE3MzUwMDcwNTgsInVzZXJuYW1lIjoid2VpeGluXzY4MjcwMDg3In0.I5WSAifBe_O1pHKXsYQLWC73RB6hykdsE8EH1sv4tXQ&spm=1001.2101.3001.6650.6&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Eactivity-6-135048661-blog-141285660.235%5Ev43%5Epc_blog_bottom_relevance_base9&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7Eactivity-6-135048661-blog-141285660.235%5Ev43%5Epc_blog_bottom_relevance_base9&utm_relevant_index=7)可以解决。
+
+
 **注意**
 
 - `WSL2` 安装的不是桌面版 `Ubuntu` 所以不会出现图形界面。
@@ -172,6 +177,8 @@ Cuda compilation tools, release 10.1, V10.1.243
 
 ### 参考
 
+[Anaconda 软件仓库镜像使用帮助](https://help.mirrors.cernet.edu.cn/anaconda/)
+
 [从零开始配置WSL2下的Python开发环境，看这一篇就够了](https://ymzhangcs.com/posts/wsl-configuration/)
 
 ### 下载安装包
@@ -211,17 +218,30 @@ channels:
   - defaults
 show_channel_urls: true
 default_channels:
-  - http://mirrors.aliyun.com/anaconda/pkgs/main
-  - http://mirrors.aliyun.com/anaconda/pkgs/r
-  - http://mirrors.aliyun.com/anaconda/pkgs/msys2
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/r
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/msys2
 custom_channels:
-  conda-forge: http://mirrors.aliyun.com/anaconda/cloud
-  msys2: http://mirrors.aliyun.com/anaconda/cloud
-  bioconda: http://mirrors.aliyun.com/anaconda/cloud
-  menpo: http://mirrors.aliyun.com/anaconda/cloud
-  pytorch: http://mirrors.aliyun.com/anaconda/cloud
-  simpleitk: http://mirrors.aliyun.com/anaconda/cloud
+  conda-forge: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
+  pytorch: https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud
 ```
+
+### 添加环境变量 
+
+**⚠️注意：请使用自己的 `anaconda3` 路径**
+
+```shell
+echo 'export PATH="/your_path/anaconda3/bin:$PATH"' >> ~/.bashrc
+```
+
+验证
+
+```shell
+source ~/.bashrc
+which conda
+```
+
+输出路径即配置成功。
 
 ### 测试是否安装成功
 
@@ -232,6 +252,8 @@ conda --version
 ```
 
 终端返回版本号即安装成功。
+
+[超全常用 conda 命令整理](https://zhuanlan.zhihu.com/p/24478448255)
 
 ### `Anaconda`替换本地 `python` 环境引起的问题及解决方案
 
