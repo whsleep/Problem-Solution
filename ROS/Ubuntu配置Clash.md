@@ -111,3 +111,23 @@ curl -x http://127.0.0.1:7890 http://ipinfo.io/json
 返回代理信息即成功。
 
 可进入 [clash](https://clash.razord.top/#/proxies) 进行界面管理。
+
+### 开启 `clash` 后无法访问国内网站
+
+将 `~/.config/clash/config.yaml` 文件中的 `dns` 替换为以下内容
+
+```shell
+dns:
+  enable: true
+  ipv6: false
+  default-nameserver: [223.5.5.5, 119.29.29.29, 114.114.114.114]
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  use-hosts: true
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+    - 114.114.114.114
+```
+
+保存后重新打开 `clash` 进行测试。
