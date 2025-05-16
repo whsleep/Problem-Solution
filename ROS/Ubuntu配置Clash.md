@@ -76,6 +76,18 @@ export https_proxy="http://127.0.0.1:7890"
 export HTTPS_PROXY="http://127.0.0.1:7890"
 ```
 
+### 设置界面 `NetWork` 配置
+
+输入指令打开设置-网络界面
+
+```shell
+gnome-control-center network
+```
+
+将 `Network Proxy` 参考 [Ubuntu 使用 Clash For Linux 客户端](https://www.zywvvd.com/notes/tools/clash/ubuntu-clash-usage/ubuntu-clash-usage/) **网络代理** 进行修改。
+
+
+
 ## 启动
 
 新建终端
