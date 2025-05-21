@@ -51,6 +51,7 @@ mv CrashCore clash
 ### `config.yaml`
 
 需要到你自己使用的机场网站，或者客户端下载配置文件。
+这里给出一个机场 [ikuuu](https://ikuuu.one/user)。
 
 ⚠ 注意：下载后重命名为 `config.yaml`。
 
