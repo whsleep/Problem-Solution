@@ -7,7 +7,7 @@
 ## 环境检测
 
 ```shell
-# 检测opencv版本是否为 4.2.0
+# 检测opencv版本是否为 4.8.0
 dpkg -l | grep libopencv
 
 # 检测yaml-cpp版本是否为 0.7.0
@@ -21,6 +21,9 @@ cat /usr/include/boost/version.hpp | grep BOOST_LIB_VERSION
 
 # 2020-04
 dpkg -l | grep g2o
+
+#
+cat /usr/local/include/ceres/version.h
 ```
 
 ### 安装 `yaml-cpp.0.7.0`
@@ -130,10 +133,85 @@ sudo rm -rf boost_1_81_0
 
 ### 安装 `cere_solver 2.1.0`
 
-⚠️ 注意：如果你使用 `WSL2` 请先进行以下验证。
+⚠️ 注意：如果你使用 `WSL2` 请先进行以下操作。
+
+> 终端输入 `echo $PATH` 检查输出结果是否存在包含 `mnt` 的路径，若不存在可跳过此步骤。
+>
+> 如果出现 `mnt` 路径，需要禁用 `$PATH` 中的 `windows` 的环境变量。
+>
+> 终端输入
+>
+> ```shell
+>sudo vim /etc/wsl.conf
+> ```
+> 🎗️: `vim` 按 `i` 进入编辑模式，按 `esc` 加 `:` 输入`wq`保存退出。
+>
+> 修改完成后重启，并再次`echo $PATH`检查即可。
+
 ```shell
 cd ~
+
 wget https://github.com/ceres-solver/ceres-solver/archive/refs/tags/2.1.0.tar.gz
+
+tar zxf ceres-solver-2.1.0.tar.gz
+
+mkdir ceres-bin
+
+cd ceres-bin
+
+cmake ../ceres-solver-2.1.0
+
+make -j$(nproc)
+
+sudo make install
+
+# 检查版本
+cat /usr/local/include/ceres/version.h
+
+# 删除相关无用文件
+rm -rf ceres-solver-2.1.0.tar.gz
+rm -rf ceres-solver-2.1.0
+rm -rf ceres-bin
+
+```
+
+### g2o安装
+
+```shell
+sudo apt-get update
+sudo apt-get install -y libeigen3-dev libboost-all-dev libopencv-dev
+
+cd ~
+wget https://github.com/RainerKuemmerle/g2o/archive/refs/tags/20200410_git.tar.gz
+tar zxf g2o-20200410_git.tar.gz
+cd g2o-20200410_git/
+mkdir build
+cd build/
+cmake ..
+```
+
+这里`cmake` 操作会出现最小版本不匹配报错，解决方式参考 `yaml-cpp.0.7.0` 。
+
+还会出现一个 `CMake Error at g2o/apps/g2o_cli/CMakeLists.txt:26 (cmake_policy):`
+
+将该目录下的 `CMakeLists.txt` 第 `26` 行改为
+
+```shell
+# cmake_policy(SET CMP0043 OLD)
+cmake_policy(SET CMP0043 NEW)
+```
+
+```shell
+make -j4
+sudo make install
+
+# 返回路径即安装成功
+find /usr/local/include /usr/include -name "g2o"
+
+# 删除相关无用文件
+rm -rf g2o-20200410_git.tar.gz
+rm -rf g2o-20200410_git/
+
 ```
 
 
