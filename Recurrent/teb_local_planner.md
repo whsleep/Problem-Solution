@@ -143,10 +143,21 @@ sudo rm -rf boost_1_81_0
 >
 > ```shell
 >sudo vim /etc/wsl.conf
+>
+> # 粘贴以下内容
+> # 不加载Windows中的PATH内容
+> [interop]
+> enabled=false
+> appendWindowsPath = false
+> # 不自动挂载Windows系统所有磁盘分区
+> [automount]
+> enabled = false
 > ```
 > 🎗️: `vim` 按 `i` 进入编辑模式，按 `esc` 加 `:` 输入`wq`保存退出。
 >
 > 修改完成后重启，并再次`echo $PATH`检查即可。
+
+⚠️ 注意：需要使用 `vscode` 远程功能，需要再编译完成后，将 `[automount]` 的 `enabled` 修改为 `true`。
 
 ```shell
 cd ~
