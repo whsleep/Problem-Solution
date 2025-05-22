@@ -16,8 +16,11 @@ pkg-config --modversion yaml-cpp
 # 检测 eigen 版本是大于 3 3.4
 pkg-config --modversion eigen3
 
-#
+# 查看Boost是否为1.8.1版本
 cat /usr/include/boost/version.hpp | grep BOOST_LIB_VERSION
+
+# 2020-04
+dpkg -l | grep g2o
 ```
 
 ### 安装 `yaml-cpp.0.7.0`
@@ -123,6 +126,14 @@ cd ..
 rm -rf boost_1_81_0.tar.gz
 rm -rf boost_1_81_0
 sudo rm -rf boost_1_81_0
+```
+
+### 安装 `cere_solver 2.1.0`
+
+⚠️ 注意：如果你使用 `WSL2` 请先进行以下验证。
+```shell
+cd ~
+wget https://github.com/ceres-solver/ceres-solver/archive/refs/tags/2.1.0.tar.gz
 ```
 
 
