@@ -7,7 +7,7 @@
 ## 环境检测
 
 ```shell
-# 检测opencv版本是否为 4.8.0
+# 检测opencv版本是否为 4.2.0
 dpkg -l | grep libopencv
 
 # 检测yaml-cpp版本是否为 0.7.0
@@ -19,10 +19,10 @@ pkg-config --modversion eigen3
 # 查看Boost是否为1.8.1版本
 cat /usr/include/boost/version.hpp | grep BOOST_LIB_VERSION
 
-# 2020-04
+# 2020-04 版本
 dpkg -l | grep g2o
 
-#
+# cere_solver 2.1.0
 cat /usr/local/include/ceres/version.h
 ```
 
@@ -133,7 +133,7 @@ sudo rm -rf boost_1_81_0
 
 ### 安装 `cere_solver 2.1.0`
 
-⚠️ 注意：如果你使用 `WSL2` 请先进行以下操作。
+⚠️ **注意：如果你使用 `WSL2` 请先进行以下操作。**
 
 > 终端输入 `echo $PATH` 检查输出结果是否存在包含 `mnt` 的路径，若不存在可跳过此步骤。
 >
@@ -157,7 +157,7 @@ sudo rm -rf boost_1_81_0
 >
 > 修改完成后重启，并再次`echo $PATH`检查即可。
 
-⚠️ 注意：需要使用 `vscode` 远程功能，需要再编译完成后，将 `[automount]` 的 `enabled` 修改为 `true`。
+⚠️ **注意：需要使用 `vscode` 远程功能，需要再编译完成后，将 `[automount]` 的 `enabled` 修改为 `true`。**
 
 ```shell
 cd ~
@@ -225,6 +225,50 @@ rm -rf g2o-20200410_git/
 
 ```
 
+## 一些适应性配置
 
+先按照以下步骤执行
+
+```shell
+git clone https://github.com/gogongxt/teb_local_planner.git
+cd teb_local_planner
+mkdir build
+cd build
+```
+### 修改
+
+1. 将 `CMakeLists.txt` 中的 `find_package(OpenCV 4.8 REQUIRED)` 修改为 `find_package(OpenCV 4.2 REQUIRED)`，为了方便这里没有安装 `4.8` 版本，实测 `4.2` 版本也可以执行。
+
+2. 修改 `config.yaml` 配置文件中的 `show_button` 为 `false`。
+
+3. 将 `gxt/config.hpp` 中的 `ReadConfigXmlFile` 函数进行以下修改，主要修改 `config.yaml` 的绝对路径。
+
+⚠️ **注意：`"/your_path/teb_local_planner/config.yaml"` 为你的 `config.yaml` 实际绝对路径，请勿复制粘贴以下内容。**
+
+> ```cpp
+>   // Load the YAML file
+>   YAML::Node config = YAML::LoadFile( "/your_path/teb_local_planner/config.yaml");
+> ```
+
+4. 由于 `Eigen` 版本不同，需要修改矩阵定义，如下
+
+文件为 `/inc/ceres_types/ceres_types.h`，第 135，136行。
+
+> ```cpp
+> // 修改前
+> Eigen::Vector<T,2> current_pose(*x_a,*y_a);
+> Eigen::Vector<T,2> pos_(T(pos(0)),T(pos(1)));
+> // 修改后
+> Eigen::Matrix<T, 2, 1> current_pose(*x_a,*y_a);
+> Eigen::Matrix<T, 2, 1> pos_(T(pos(0)),T(pos(1)));
+> ```
+
+
+```shell
+make -j16
+./teb
+```
+
+弹出 `GUI` 界面即成功运行。
 
 
