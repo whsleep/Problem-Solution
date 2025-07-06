@@ -1,5 +1,7 @@
 # 前驱三轮底盘动力学
 
+<img src="picture/tricycle_v1.png"  height ="400" />
+
 状态向量为
 
 $X=[x,y,\theta,\dot{x},\dot{y},\dot{\theta}]^T$
