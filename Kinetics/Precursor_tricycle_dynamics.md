@@ -30,3 +30,8 @@ $$
 
 $d$ 为前驱动轮与后轮轴线的垂直距离。
 
+参考:
+
+[tricyclEbot](https://github.com/kuralme/tricyclEbot)
+
+[tricycle_robot](https://github.com/duynamrcv/tricycle_robot)
