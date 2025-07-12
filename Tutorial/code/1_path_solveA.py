@@ -11,7 +11,7 @@ start_pose = np.array([0, 0])
 end_pose = np.array([2, 2])
 obs_pose = np.array([[0.5, 0.75], [1.5, 1.25]])
 safe_dis = 0.5
-size = 25  
+size = 5  
 
 
 def compute_safety_violation(trajectory):

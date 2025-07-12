@@ -62,7 +62,7 @@ def objective_function(params, lambda_weight=100, lambda_dist=100):
         segment_distance = np.sqrt(dx**2 + dy**2)
         
         # 计算约束违反程度
-        ind_cos = max(0, abs(l_mid - segment_distance) - l_mid)
+        ind_cos = l_mid - segment_distance
         
         # 添加约束项
         distance_constraint_terms.append(ind_cos)
@@ -147,10 +147,10 @@ def visualize_trajectory(result, initial_guess):
 def generate_linear_initial_guess():
     """生成线性插值的初始猜测"""
     initial_guess = np.zeros((size, 2))
-    for i in range(size):
-        ratio = (i + 1) / (size + 1)
-        point = start_pose + ratio * (end_pose - start_pose)
-        initial_guess[i] = point
+    # for i in range(size):
+    #     ratio = (i + 1) / (size + 1)
+    #     point = start_pose + ratio * (end_pose - start_pose)
+    #     initial_guess[i] = point
     return initial_guess
 
 if __name__ == '__main__':
@@ -165,7 +165,7 @@ if __name__ == '__main__':
         objective_function,
         initial_guess_flat,
         method='trf',
-        args=(500, 100),  # 分别对应lambda_weight和lambda_dist
+        args=(5, 1),  # 分别对应lambda_weight和lambda_dist
         verbose=1,
         ftol=1e-8,
         xtol=1e-8,
