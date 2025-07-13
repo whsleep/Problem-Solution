@@ -69,4 +69,7 @@ for obs in obs_pose:
     circle = plt.Circle(obs, safe_dis, color='k', alpha=0.1)
     plt.gca().add_patch(circle)
 plt.plot([0, 2], [0, 2], 'k--', alpha=0.3, label='straight')
-plt.axis('equal'); plt.legend(); plt.tight_layout(); plt.show()
+plt.axis('equal'); 
+plt.legend(); 
+plt.tight_layout(); 
+plt.show()
