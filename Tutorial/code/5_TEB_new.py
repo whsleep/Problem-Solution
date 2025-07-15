@@ -11,6 +11,8 @@ class ReplanSolver:
                  n = None,          # 允许 None -> 自动设定轨迹点数量
                  vmax: float = 1.0,
                  wmax: float = 1.5,
+                 vamax: float = 0.5,
+                 wamax: float = 0.8,
                  rmin: float = 0.5,
                  safe_dis: float = 0.3,
                  auto_hz: float = 10.0):        # 控制频率
@@ -19,6 +21,8 @@ class ReplanSolver:
         self.obs      = np.copy(np.asarray(obs, float))
         self.vmax     = vmax
         self.wmax     = wmax
+        self.vamax    = vamax
+        self.wamax    = wamax
         self.rmin     = rmin
         self.safe_dis = safe_dis
         self.auto_hz  = auto_hz
@@ -55,6 +59,9 @@ class ReplanSolver:
             return ca.atan2(ca.sin(a), ca.cos(a))
 
         res = []
+        res_va  = []
+        res_wa  = []
+
         for i in range(n+1):
             p0, p1   = pts[i][:2], pts[i+1][:2]
             th0, th1 = pts[i][2], pts[i+1][2]
@@ -72,6 +79,28 @@ class ReplanSolver:
             dth = norm_angle(th1 - th0)
             ω   = dth / (dt + 1e-6)
             res.append(ca.fmax(0, ca.fabs(ω) - self.wmax))
+            if i <= n-1:
+                # 计算 v_i, v_{i+1}, ω_i, ω_{i+1}
+                seg_i   = ca.norm_2(pts[i+1][:2] - pts[i][:2])
+                seg_ip1 = ca.norm_2(pts[i+2][:2] - pts[i+1][:2])
+                dt_i   = ΔT[i]
+                dt_ip1 = ΔT[i+1]
+                v_i   = seg_i   / (dt_i   + 1e-6)
+                v_ip1 = seg_ip1 / (dt_ip1 + 1e-6)
+
+                dth_i   = norm_angle(pts[i+1][2] - pts[i][2])
+                dth_ip1 = norm_angle(pts[i+2][2] - pts[i+1][2])
+                ω_i   = dth_i   / (dt_i   + 1e-6)
+                ω_ip1 = dth_ip1 / (dt_ip1 + 1e-6)
+
+                # 加速度
+                denom = 0.5 * (dt_i + dt_ip1) + 1e-6
+                va  = (v_ip1 - v_i) / denom
+                wa  = (ω_ip1 - ω_i) / denom
+
+                res_va.append(0.1*ca.fmax(0, ca.fabs(va) - self.vamax))
+                res_wa.append(0.1*ca.fmax(0, ca.fabs(wa) - self.wamax))
+
             l0 = ca.vertcat(ca.cos(th0), ca.sin(th0))
             l1 = ca.vertcat(ca.cos(th1), ca.sin(th1))
             d  = p1 - p0
@@ -83,7 +112,7 @@ class ReplanSolver:
             res.append(10*ca.fmax(0, ca.fabs(r) - self.rmin))
 
 
-        residuals = ca.vertcat(*res)
+        residuals = ca.vertcat(*res,*res_va,*res_wa)
         nlp = {'x': w, 'f': 0.5 * ca.dot(residuals, residuals)}
         opts = {'ipopt.print_level': 0, 'print_time': 1,
                 'ipopt.warm_start_init_point': 'yes',
