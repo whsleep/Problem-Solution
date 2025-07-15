@@ -61,8 +61,10 @@ for i in range(n+1):
     cross = (l0[0]+l1[0])*d[1] - (l0[1]+l1[1])*d[0]
     res.append(10*cross)
     # 7. 转弯半径
+    # 计算转弯半径（考虑速度方向）
     r = v / (ca.fabs(ω) + 1e-6)
-    res.append(10*ca.fmax(0, r - rmin))
+    # 确保转弯半径的绝对值大于等于最小转弯半径
+    res.append(10*ca.fmax(0, ca.fabs(r) - rmin))
 
 residuals = ca.vertcat(*res)
 

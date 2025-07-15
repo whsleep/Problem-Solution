@@ -6,7 +6,7 @@ import matplotlib.patches as patches
 # ---------- 1. 参数 ----------
 start   = np.array([0.0, 0.0, -np.pi])
 end     = np.array([2.0, 2.0, np.pi/3])
-obs     = np.array([[0.5, 0.75], [1.5, 1.25]])
+obs     = np.array([[0.5, 0.75], [1.5, 1.25],[0.5, 1.75], [1.5, 0.85]])
 n       = 50
 vmax    = 1.0
 wmax    = 1.5
@@ -59,8 +59,10 @@ def build_solver(obs_now):
         cross = (l0[0]+l1[0])*d[1] - (l0[1]+l1[1])*d[0]
         res.append(10*cross)
         # 7. 转弯半径
+        # 计算转弯半径（考虑速度方向）
         r = v / (ca.fabs(ω) + 1e-6)
-        res.append(10*ca.fmax(0, r - rmin))
+        # 确保转弯半径的绝对值大于等于最小转弯半径
+        res.append(10*ca.fmax(0, ca.fabs(r) - rmin))
 
     residuals = ca.vertcat(*res)
     nlp = {'x': w, 'f': 0.5 * ca.dot(residuals, residuals)}
@@ -156,6 +158,7 @@ def on_release(event):
     print('Re-solved cost =', cost)
     update_plot(full)
     drag_idx = None
+    print(obs)
 
 fig.canvas.mpl_connect('pick_event', on_pick)
 fig.canvas.mpl_connect('motion_notify_event', on_motion)
