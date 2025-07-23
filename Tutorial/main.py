@@ -9,8 +9,10 @@ import time
 from draw import Draw_MPC_point_stabilization_v1
 
 def shift_movement(T, t0, x0, u, f):
+    # 单步前向一次
     f_value = f(x0, u[:, 0])
     st = x0 + T*f_value
+    # 仿真步长增加一次
     t = t0 + T
     u_end = ca.horzcat(u[:, 1:], u[:, -1])
 
@@ -92,14 +94,15 @@ if __name__ == '__main__':
     # 构建NLP问题
     # f'为目标函数，'x'为需寻找的优化结果（优化目标变量），'p'为系统参数，'g'为约束条件
     nlp_prob = {'f': obj, 'x': ca.reshape(U, -1, 1), 'p':P, 'g':ca.vcat(g)}
-
+    # 优化器参数
     opts_setting = {'ipopt.max_iter':100, 'ipopt.print_level':0, 'print_time':0, 'ipopt.acceptable_tol':1e-8, 'ipopt.acceptable_obj_change_tol':1e-6, }
     solver = ca.nlpsol('solver', 'ipopt', nlp_prob, opts_setting)
 
 
-    # Simulation
+    # x,y上下界
     lbg = -2.0
     ubg = 2.0
+    # v,omega上下界
     lbx = []
     ubx = []
     for _ in range(N):
@@ -107,44 +110,64 @@ if __name__ == '__main__':
         ubx.append(v_max)
         lbx.append(-omega_max)
         ubx.append(omega_max)
+    # 初始化设置
     t0 = 0.0
+    # 3x1
     x0 = np.array([0.0, 0.0, 0.0]).reshape(-1, 1)# initial state
+    # 3x1
     xs = np.array([1.5, 1.5, 0.0]).reshape(-1, 1) # final state
+    # Nx2
     u0 = np.array([0.0, 0.0]*N).reshape(-1, 2)# np.ones((N, 2)) # controls
-    x_c = [] # contains for the history of the state
+    # 保存历史状态
+    x_c = []
     u_c = []
+    # 保存时间序列
     t_c = [] # for the time
     xx = []
+    # 结束仿真时间
     sim_time = 20.0
 
     ## start MPC
+    # 求解迭代计数
     mpciter = 0
+    # 记录起始时间
     start_time = time.time()
+    # 存储时间戳
     index_t = []
+    # 6x1
     c_p = np.concatenate((x0, xs))
+    # 2Nx1
     init_control = ca.reshape(u0, -1, 1)
+    # 求解
     res = solver(x0=init_control, p=c_p, lbg=lbg, lbx=lbx, ubg=ubg, ubx=ubx)
     lam_x_ = res['lam_x']
     ### inital test
     while(np.linalg.norm(x0-xs)>1e-2 and mpciter-sim_time/T<0.0 ):
         ## set parameter
+        # 起始值 6x1
         c_p = np.concatenate((x0, xs))
+        # 设置初始控制输入 2Nx1
         init_control = ca.reshape(u0, -1, 1)
         t_ = time.time()
+        # 软启动求解
         res = solver(x0=init_control, p=c_p, lbg=lbg, lbx=lbx, ubg=ubg, ubx=ubx, lam_x0=lam_x_)
         lam_x_ = res['lam_x']
-        # res = solver(x0=init_control, p=c_p,)
-        # print(res['g'])
+        # 记录单次求解时间戳
         index_t.append(time.time()- t_)
+        # 提取求解结果, 2xN
         u_sol = ca.reshape(res['x'], n_controls, N) # one can only have this shape of the output
+        # 输出求解出的控制序列的状态序列
         ff_value = ff(u_sol, c_p) # [n_states, N+1]
+        # 记录该次求解状态序列
         x_c.append(ff_value)
+        # 记录最近的一次控制输入
         u_c.append(u_sol[:, 0])
         t_c.append(t0)
         t0, x0, u0 = shift_movement(T, t0, x0, u_sol, f)
-
+        # 推进一个步长后的状态，作为下一次优化初值
         x0 = ca.reshape(x0, -1, 1)
         xx.append(x0.full())
+        # 迭代次数加一
         mpciter = mpciter + 1
     t_v = np.array(index_t)
     print(t_v.mean())
