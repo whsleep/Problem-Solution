@@ -1,0 +1,17 @@
+world:
+  height: 5  # the height of the world
+  width: 5  # the width of the world
+  step_time: 0.1  # 10Hz calculate each step
+  sample_time: 0.1  # 10 Hz for render and data extraction 
+  offset: [-1, -1] # the offset of the world on x and y 
+
+robot:  
+  - kinematics: {name: 'diff'}  # omni, diff, acker
+    shape: {name: 'rectangle', length: 0.4, width: 0.3 , wheelbase: 0}
+    state: [0, 0, -3.14]
+    goal: [2, 2, 1.57]
+    vel_max: [0.8, 1]
+    goal_threshold: 0.1
+    plot:
+      show_trajectory: True
+      show_goal: True
