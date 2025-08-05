@@ -45,7 +45,7 @@ $d$ 为前驱动轮与后轮轴线的垂直距离。
 
 <img src="picture/circle.png"  height ="400" />
 
-给定后轮轴心相邻位姿  
+给定后轮轴心相邻位姿
 
 $$
 \mathbf{P}_1 = \begin{bmatrix} x_1 \\ y_1 \\ \theta_1 \end{bmatrix}, \quad
@@ -55,34 +55,38 @@ $$
 时间间隔 $\Delta T$，且假设 $\gamma$ 恒定。
 
 ### 几何量定义
-- **转向角度**：$\Delta\theta = \theta_2 - \theta_1$  
+
+- **转向角度**：$\Delta\theta = \theta_2 - \theta_1$
 
 ### 后轮轴心轨迹
-- **弦长**：$s = \|\mathbf{P}_{2,xy}-\mathbf{P}_{1,xy}\|$  
-- **转向半径**：$R = \dfrac{s}{2sin\frac{\Delta\theta}{2}}$  
+
+- **弦长**：$s = \|\mathbf{P}_{2,xy}-\mathbf{P}_{1,xy}\|$
+- **转向半径**：$R = \dfrac{s}{2sin\frac{\Delta\theta}{2}}$
 - **弧长**：$L = R \cdot \Delta\theta$
 
 ### 前轮轴心轨迹
+
 将后轮位姿平移至前轮：
 
 $$
 \mathbf{P}_i^f = \mathbf{P}_i + d\begin{bmatrix} \cos\theta_i \\ \sin\theta_i \end{bmatrix}, \quad i=1,2
 $$
 
-- **弦长**：$s^f = \|\mathbf{P}_{2,xy}^f - \mathbf{P}_{1,xy}^f\|$  
-- **前轮转向半径**：$R^f = \dfrac{s^f}{2sin\frac{\Delta\theta}{2}}$  
+- **弦长**：$s^f = \|\mathbf{P}_{2,xy}^f - \mathbf{P}_{1,xy}^f\|$
+- **前轮转向半径**：$R^f = \dfrac{s^f}{2sin\frac{\Delta\theta}{2}}$
 - **前轮弧长**：$L^f = R^f \cdot \Delta\theta$
 
 ### 控制量反算
-- **前轮线速度**：$v_f = \dfrac{L^f}{\Delta T}$  
-- **前轮转向角**：  
- $$
-  \gamma = \arctan\left(\frac{d}{L}\right)
- $$
 
-## TEB约束edge的修改
+- **前轮线速度**：$v_f = \dfrac{L^f}{\Delta T}$
+- **前轮转向角**：
+  $$
+   \gamma = \arctan\left(\frac{d}{L}\right)
+  $$
 
-### 速度edge
+## TEB 约束 edge 的修改
+
+### 速度 edge
 
 文件 `edge_velocity.h`
 
@@ -146,7 +150,7 @@ $$
     }
 ```
 
-### 加速度edge
+### 加速度 edge
 
 文件 `edge_acceleration.h`
 
@@ -253,28 +257,19 @@ iteration= 5     chi2= 26.480399         time= 7.2253e-05        cumTime= 0.0004
 iteration= 6     chi2= 26.480399         time= 6.8598e-05        cumTime= 0.000554374    edges= 20       schur= 0        lambda= 255356415000.890381     levenbergIter= 1
 ```
 
-
 $lambda$值异常巨大
-$lambda=279951946985842702469300224.000000$（约2.8×10²⁶），这是 LM 算法中的阻尼系数，用于平衡高斯 - 牛顿步（二阶近似）和梯度下降步（一阶近似）。
+$lambda=279951946985842702469300224.000000$（约 2.8×10²⁶），这是 LM 算法中的阻尼系数，用于平衡高斯 - 牛顿步（二阶近似）和梯度下降步（一阶近似）。
 $lambda$越大，算法越接近 “梯度下降”，步长被严重压缩（甚至接近零），导致参数更新量极小或为零。
 日志中$chi2$（目标函数值，残差平方和）从 51.3 小幅降至 49.2 后不再变化，说明参数未被有效调整，目标函数几乎未优化。
 $levenbergIter=9$
 这表示在每次优化迭代中，LM 算法的阻尼系数调整次数达到上限（通常为尝试减小$lambda$以获得可接受的步长）。但最终仍未找到合适的$lambda$，导致步长无效（无法降低$chi2$）。
 
-## 尝试新加运动学约束
+##
 
-$$
-\begin{align}
-v&=v_fcos\gamma\\
-\dot{\theta}&=\frac{v_f sin\gamma}{d}\\
-\dot{\theta}&=\frac{v tan\gamma}{d}
-\end{align}
-$$
-
-通过 $\dot{\theta}=\frac{v tan\gamma}{d}$ 绑定速度和角速度的关系
+当前轮转角允许范围在 $-\pi/2\sim\pi/2$ 时, 后轮中心坐标
 
 参考:
 
-[tricyclEbot](https://github.com/kuralme/tricyclEbot)
+- [tricyclEbot](https://github.com/kuralme/tricyclEbot)
 
-[tricycle_robot](https://github.com/duynamrcv/tricycle_robot)
+- [tricycle_robot](https://github.com/duynamrcv/tricycle_robot)
