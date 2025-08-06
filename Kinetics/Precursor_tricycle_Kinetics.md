@@ -76,21 +76,15 @@ $$
 - **前轮转向半径**：$R^f = \dfrac{s^f}{2sin\frac{\Delta\theta}{2}}$
 - **前轮弧长**：$L^f = R^f \cdot \Delta\theta$
 
-### 控制量反算
-
-- **前轮线速度**：$v_f = \dfrac{L^f}{\Delta T}$
-- **前轮转向角**：
-  $$
-   \gamma = \arctan\left(\frac{d}{L}\right)
-  $$
-
 ## TEB 约束 edge 的修改
 
 ### 速度 edge
 
 文件 `edge_velocity.h`
 
-```cpp
+<details>
+<summary>edge_velocity</summary>
+<pre><code class="language-cpp">
     void computeError()
     {
       ROS_ASSERT_MSG(cfg_, "You must call setTebConfig on EdgeVelocity()");
@@ -148,13 +142,18 @@ $$
 
       ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeVelocity::computeError() _error[0]=%f _error[1]=%f\n", _error[0], _error[1]);
     }
-```
+
+</code></pre>
+
+</details>
 
 ### 加速度 edge
 
 文件 `edge_acceleration.h`
 
-```cpp
+<details>
+<summary>edge_velocity</summary>
+<pre><code class="language-cpp">
 void computeError()
     {
       ROS_ASSERT_MSG(cfg_, "You must call setTebConfig on EdgeAcceleration()");
@@ -240,7 +239,10 @@ void computeError()
       ROS_ASSERT_MSG(std::isfinite(_error[0]), "EdgeAcceleration::computeError() translational: _error[0]=%f\n", _error[0]);
       ROS_ASSERT_MSG(std::isfinite(_error[1]), "EdgeAcceleration::computeError() rotational: _error[1]=%f\n", _error[1]);
     }
-```
+
+</code></pre>
+
+</details>
 
 ## 控制量反算
 
@@ -264,9 +266,39 @@ $lambda$越大，算法越接近 “梯度下降”，步长被严重压缩（�
 $levenbergIter=9$
 这表示在每次优化迭代中，LM 算法的阻尼系数调整次数达到上限（通常为尝试减小$lambda$以获得可接受的步长）。但最终仍未找到合适的$lambda$，导致步长无效（无法降低$chi2$）。
 
-##
+## 输出转换&约束转换
 
-当前轮转角允许范围在 $-\pi/2\sim\pi/2$ 时, 后轮中心坐标
+原始 TEB 的输出为相对后轮轴心的一系列位姿 $\{pose_1,pose_2,...\}$
+
+但是由于控制对象是前轮,所以需要将后轮轴心位姿转换为前驱轮的 $v,\gamma$
+
+此外,也需要将前轮的约束转换为整体的约束,
+
+所以修改包括两个内容
+
+- 后轮轴心位姿转换为前驱轮控制量
+- 前驱轮转换为后轮轴心约束
+
+### 后轮轴心位姿转换为前驱轮控制量
+
+**前轮线速度**：$v_f = \dfrac{L^f}{\Delta T}$
+
+- $L^f$ 为前轮弧长
+
+**前轮转角**：
+
+$$
+\gamma = atan(\frac{\omega d}{v_f})
+$$
+
+> 当前轮转角允许范围在 $-\pi/2\sim\pi/2$ 时
+
+需要考虑到两个特殊情况
+
+- $v_f$ 逼近 0
+- 相邻两个 $pose$ 的距离极小
+
+设置合适的阈值,在上述两种情况下直接设置为 $-\pi/2$ 或者 $\pi/2$
 
 参考:
 
