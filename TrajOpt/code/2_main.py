@@ -1,7 +1,7 @@
 import casadi as ca
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation, PillowWriter, FFMpegWriter
+from matplotlib.animation import FuncAnimation, PillowWriter
 import matplotlib.gridspec as gridspec
 
 
@@ -9,8 +9,8 @@ import matplotlib.gridspec as gridspec
 plt.rcParams["font.family"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC"]
 plt.rcParams["axes.unicode_minus"] = False
 
-def explicit_qp_solver_with_visualization(N=100):
-    """使用显式QP格式求解并可视化物块轨迹优化问题"""
+def explicit_qp_solver_with_visualization(N=10):
+    """使用显式QP格式求解并可视化物块轨迹优化问题，显示控制点和状态点"""
     # 时间离散化
     t = np.linspace(0, 1, N)
     h = t[1:] - t[:-1]  # 时间间隔
@@ -96,7 +96,7 @@ def explicit_qp_solver_with_visualization(N=100):
     v = z_opt[1::3]  # 速度
     u = z_opt[2::3]  # 控制力
     
-    # 5. 动态可视化
+    # 5. 动态可视化 - 修改为显示控制点和状态点
     fig = plt.figure(figsize=(12, 9))
     gs = gridspec.GridSpec(2, 2, width_ratios=[3, 2], height_ratios=[1, 1])
     
@@ -112,48 +112,57 @@ def explicit_qp_solver_with_visualization(N=100):
     ax_block.plot([1, 1], [-0.1, 0.1], 'k-', linewidth=2)
     ax_block.text(-0.05, -0.25, '起点', ha='center')
     ax_block.text(1.05, -0.25, '终点', ha='center')
+    # 位置控制点
+    x_points = ax_block.scatter(x, np.zeros_like(x), c='orange', s=30, alpha=0.6, label='位置控制点')
     # 物块和轨迹
     block = plt.Rectangle((x[0]-0.05, -0.2), 0.1, 0.4, fc='dodgerblue', ec='blue')
     trail, = ax_block.plot([x[0]], [0], 'r--', linewidth=1)
     time_text = ax_block.text(0.05, 0.8, f'时间: 0.00s', transform=ax_block.transAxes)
     ax_block.add_patch(block)
+    ax_block.legend()
     
-    # 5.2 位置-时间曲线
+    # 5.2 位置-时间控制点
     ax_pos = fig.add_subplot(gs[1, 0])
     ax_pos.set_xlim(0, 1)
     ax_pos.set_ylim(-0.1, 1.1)
-    ax_pos.set_title('位置-时间曲线', fontsize=14)
+    ax_pos.set_title('位置-时间控制点', fontsize=14)
     ax_pos.set_xlabel('时间 (s)')
     ax_pos.set_ylabel('位置')
     ax_pos.grid(alpha=0.3)
-    pos_line, = ax_pos.plot(t, x, 'b-', linewidth=1.5)
-    pos_marker, = ax_pos.plot([t[0]], [x[0]], 'ro', markersize=6)
+    # 显示所有位置控制点
+    pos_points = ax_pos.scatter(t, x, c='blue', s=30, alpha=0.6, label='位置控制点')
+    pos_marker, = ax_pos.plot([t[0]], [x[0]], 'ro', markersize=6, label='当前点')
+    ax_pos.legend()
     
-    # 5.3 速度-时间曲线
+    # 5.3 速度-时间控制点
     ax_vel = fig.add_subplot(gs[0, 1])
     max_v = max(abs(v)) * 1.2
     ax_vel.set_xlim(0, 1)
     ax_vel.set_ylim(-max_v, max_v)
-    ax_vel.set_title('速度-时间曲线', fontsize=14)
+    ax_vel.set_title('速度-时间控制点', fontsize=14)
     ax_vel.set_xlabel('时间 (s)')
     ax_vel.set_ylabel('速度')
     ax_vel.grid(alpha=0.3)
     ax_vel.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-    vel_line, = ax_vel.plot(t, v, 'g-', linewidth=1.5)
-    vel_marker, = ax_vel.plot([t[0]], [v[0]], 'ro', markersize=6)
+    # 显示所有速度控制点
+    vel_points = ax_vel.scatter(t, v, c='green', s=30, alpha=0.6, label='速度控制点')
+    vel_marker, = ax_vel.plot([t[0]], [v[0]], 'ro', markersize=6, label='当前点')
+    ax_vel.legend()
     
-    # 5.4 控制力-时间曲线
+    # 5.4 控制力-时间控制点
     ax_force = fig.add_subplot(gs[1, 1])
     max_u = max(abs(u)) * 1.2
     ax_force.set_xlim(0, 1)
     ax_force.set_ylim(-max_u, max_u)
-    ax_force.set_title('控制力-时间曲线', fontsize=14)
+    ax_force.set_title('控制力-时间控制点', fontsize=14)
     ax_force.set_xlabel('时间 (s)')
     ax_force.set_ylabel('力')
     ax_force.grid(alpha=0.3)
     ax_force.axhline(y=0, color='k', linestyle='-', alpha=0.3)
-    force_line, = ax_force.plot(t, u, 'purple', linewidth=1.5)
-    force_marker, = ax_force.plot([t[0]], [u[0]], 'ro', markersize=6)
+    # 显示所有控制力控制点
+    force_points = ax_force.scatter(t, u, c='purple', s=30, alpha=0.6, label='控制力控制点')
+    force_marker, = ax_force.plot([t[0]], [u[0]], 'ro', markersize=6, label='当前点')
+    ax_force.legend()
     
     plt.tight_layout()
     
@@ -165,7 +174,7 @@ def explicit_qp_solver_with_visualization(N=100):
         trail.set_data(x[:frame+1], np.zeros(frame+1))
         # 更新时间文本
         time_text.set_text(f'时间: {t[frame]:.2f}s')
-        # 更新各曲线标记
+        # 更新各点标记
         pos_marker.set_data([t[frame]], [x[frame]])
         vel_marker.set_data([t[frame]], [v[frame]])
         force_marker.set_data([t[frame]], [u[frame]])
@@ -176,16 +185,16 @@ def explicit_qp_solver_with_visualization(N=100):
     ani = FuncAnimation(
         fig, update,
         frames=len(t),
-        interval=50,  # 每帧间隔50ms
+        interval=100,  # 每帧间隔100ms
         blit=True,
         repeat=False
     )
     
-    # 保存为GIF (无需额外依赖)
-    writer = PillowWriter(fps=30)
-    ani.save('block_trajectory.gif', writer=writer)
+    # 保存为GIF
+    writer = PillowWriter(fps=10)
+    ani.save('block_trajectory_points.gif', writer=writer)
     plt.show()
 
 # 运行程序
 if __name__ == "__main__":
-    explicit_qp_solver_with_visualization(N=100)
+    explicit_qp_solver_with_visualization(N=10)

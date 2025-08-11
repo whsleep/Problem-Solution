@@ -48,9 +48,9 @@ class TrajectoryOptimizer:
     def _build_optimizer(self):
         """构建轨迹优化求解器"""
         # 优化变量
-        U = ca.SX.sym('U', self.n_controls, self.N)  # 控制序列（长度N）
-        X = ca.SX.sym('X', self.n_states, self.N+1)  # 状态序列（长度N+1）
-        P = ca.SX.sym('P', 2*self.n_states)          # 参数: [初始状态, 目标状态]
+        U = ca.SX.sym('U', self.n_controls, self.N)  # 控制序列（长度2xN）
+        X = ca.SX.sym('X', self.n_states, self.N+1)  # 状态序列（长度3xN+1）
+        P = ca.SX.sym('P', 2*self.n_states)          # 参数: [初始状态, 目标状态]（6x1）
         
         # 代价函数权重
         self.Q = np.diag([20.0, 20.0, 100.0])  # 状态权重
@@ -59,7 +59,7 @@ class TrajectoryOptimizer:
         
         # 构建目标函数和约束
         obj = 0
-        g = [X[:, 0] - P[:self.n_states]]  # 初始状态约束
+        g = [X[:, 0] - P[:self.n_states]]  # 初始状态约束 g=0
         g.append(X[:, -1] - P[self.n_states:])  # 终端状态约束（强制最后到达目标）
         
         for i in range(self.N):
@@ -68,15 +68,16 @@ class TrajectoryOptimizer:
             obj += ca.mtimes([state_error.T, self.Q, state_error])
             obj += ca.mtimes([U[:, i].T, self.R, U[:, i]])
             
-            # 运动学约束 (欧拉离散)
-            x_next = X[:, i] + self.T * self.f(X[:, i], U[:, i])
-            g.append(X[:, i+1] - x_next)
+            # 运动学约束 (欧拉离散) g = 0
+            x_b = (X[:, i+1] - X[:, i])/ self.T - self.f(X[:, i], U[:, i])
+            g.append(x_b)
         
         # 终端代价
         final_error = X[:, -1] - P[self.n_states:]
         obj += ca.mtimes([final_error.T, self.Qf, final_error])
         
         # 优化变量向量
+        # 合并 2Nx1 和 3(N+1)x1 为 (5N+3)x1
         opt_vars = ca.vertcat(
             ca.reshape(U, -1, 1),
             ca.reshape(X, -1, 1)
@@ -105,17 +106,21 @@ class TrajectoryOptimizer:
         
         # 约束上下界
         # 初始状态和终端状态约束为硬约束（等于给定值）
+        # 起点+目标点+中间点 等式约束上下限制 
         self.lbg = [0.0]*self.n_states + [0.0]*self.n_states + [0.0]*(self.N*self.n_states)
         self.ubg = [0.0]*self.n_states + [0.0]*self.n_states + [0.0]*(self.N*self.n_states)
         
+        """"顺序很重要, 与opt_vars对应"""
         # 控制输入约束
         self.lbx = []
         self.ubx = []
+        # (2*N)x1 = 400x1
         for _ in range(self.N):
             self.lbx.extend([-self.v_max, -self.omega_max])
             self.ubx.extend([self.v_max, self.omega_max])
         
         # 状态变量约束
+        # 3*(N+1)x1=606x1
         for _ in range(self.N + 1):
             self.lbx.extend([-np.inf, -np.inf, -np.inf])
             self.ubx.extend([np.inf, np.inf, np.inf])
@@ -184,7 +189,7 @@ if __name__ == '__main__':
 
         if x_trajectory is not None and u_controls is not None:
             # 仿真执行求解出的控制序列
-            env = irsim.make('robot_world.yaml')
+            env = irsim.make('robot_world.yaml', save_ani=True, display=True, full=False)
             # 确保不超过可用的控制输入数量
             steps = min(len(u_controls), 200)
             for i in range(steps):
@@ -194,7 +199,7 @@ if __name__ == '__main__':
                 if env.done():
                     break
 
-            env.end()
+            env.end(ani_name='mpc_nlp',  ending_time=steps*0.1)
             
     except Exception as e:
         print(f"程序运行出错: {str(e)}")
