@@ -76,7 +76,7 @@ if __name__ == "__main__":
     def func(x, theta):
         return theta[0] * np.exp(theta[1] * x)
     
-    # 定义Jacobian矩阵
+    # 定义Jacobian矩阵 1x2
     def jacobian(x, theta):
         J = np.zeros((len(x), len(theta)))
         J[:, 0] = np.exp(theta[1] * x)
