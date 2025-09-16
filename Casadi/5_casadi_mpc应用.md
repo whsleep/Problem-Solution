@@ -564,33 +564,134 @@ prob_ 指向的实际是 DiffDriveProb 对象，其 vptr 指向 DiffDriveProb �
 ###### 动力学方程绑定
 
 ```cpp
-        std::function<casadi::MX(casadi::MX, casadi::MX)> dynamics;
-        switch (prob_->dynamics_type()) {
-        case Problem::DynamicsType::ContinuesForwardEuler: {
-            std::function<casadi::MX(casadi::MX, casadi::MX)> con_dyn =
-                std::bind(&Problem::dynamics, prob_, std::placeholders::_1, std::placeholders::_2);
-            dynamics = std::bind(integrate_dynamics_forward_euler<casadi::MX>, prob_->dt(), std::placeholders::_1, std::placeholders::_2, con_dyn);
-            break;
-        }
-        case Problem::DynamicsType::ContinuesModifiedEuler: {
-            std::function<casadi::MX(casadi::MX, casadi::MX)> con_dyn =
-                std::bind(&Problem::dynamics, prob_, std::placeholders::_1, std::placeholders::_2);
-            dynamics = std::bind(integrate_dynamics_modified_euler<casadi::MX>, prob_->dt(), std::placeholders::_1, std::placeholders::_2, con_dyn);
-            break;
-        }
-        case Problem::DynamicsType::ContinuesRK4: {
-            std::function<casadi::MX(casadi::MX, casadi::MX)> con_dyn =
-                std::bind(&Problem::dynamics, prob_, std::placeholders::_1, std::placeholders::_2);
-            dynamics = std::bind(integrate_dynamics_rk4<casadi::MX>, prob_->dt(), std::placeholders::_1, std::placeholders::_2, con_dyn);
-            break;
-        }
-        case Problem::DynamicsType::Discretized:
-            dynamics = std::bind(&Problem::dynamics, prob_, std::placeholders::_1, std::placeholders::_2);
-            break;
-        }
+std::function<casadi::MX(casadi::MX, casadi::MX)> dynamics;
+switch (prob_->dynamics_type()) {
+    // 绑定
+}
 ```
 
+使用 `prob_` 中的枚举类，来选择需要绑定的配点方法
 
+###### 决策变量及对应边界配置
+
+```cpp
+w.push_back(Xs[i]);
+if (i != 0) {
+    for (size_t l = 0; l < nx; l++) {
+        lbw_.push_back(x_bounds[i - 1].first[l]);
+        ubw_.push_back(x_bounds[i - 1].second[l]);
+    }
+} else {
+    for (size_t l = 0; l < nx; l++) {
+        lbw_.push_back(0); // dummy
+        ubw_.push_back(0); // dummy
+    }
+}
+w.push_back(Us[i]);
+for (size_t l = 0; l < nu; l++) {
+    lbw_.push_back(u_bounds[i].first[l]);
+    ubw_.push_back(u_bounds[i].second[l]);
+}
+```
+
+这里的配置方式为 
+$$
+\begin{align}
+&[\mathrm{x}_0,\mathrm{u}_0,\mathrm{x}_1,\cdots,\mathrm{x}_{n},\mathrm{u}_{n},\mathrm{x}_{n+1}]\\
+&[(lb_{x_0},ub_{x_0}),(lb_{u_0},ub_{u_0}),(lb_{x_1},ub_{x_1}),\cdots,(lb_{x_n},ub_{x_n}),(lb_{u_n},ub_{u_n}),(lb_{x_{n+1}},ub_{x_{n+1}})]
+\end{align}
+$$
+
+边界配置信息也应当按照决策变量顺序进行定义。
+
+###### 目标函数及动力学约束
+
+```cpp
+MX xplus = dynamics(Xs[i], Us[i]);
+J += prob_->stage_cost(Xs[i], Us[i], i);
+
+g.push_back((Xs[i + 1] - xplus));
+for (size_t l = 0; l < nx; l++) {
+    lbg_.push_back(0);
+    ubg_.push_back(0);
+    equality_.push_back(true);
+}
+```
+
+这里动力学限制为
+
+$$
+\mathrm{f}(\mathrm{x}_{k},\mathrm{u}_{k})-\mathrm{x}_{k+1}=0
+$$
+
+`stage_cost` 会根据实例化的内容进行具体调用
+
+###### 添加等式/不等式约束
+
+```cpp
+    for (auto &con : prob_->equality_constrinats_) {
+    auto con_val = con(Xs[i], Us[i]);
+        g.push_back(con_val);
+        for (auto l = 0; l < con_val.size1(); l++) {
+            lbg_.push_back(0);
+            ubg_.push_back(0);
+            equality_.push_back(true);
+        }
+    }
+    for (auto &con : prob_->inequality_constrinats_) {
+        auto con_val = con(Xs[i], Us[i]);
+        g.push_back(con_val);
+        for (auto l = 0; l < con_val.size1(); l++) {
+            lbg_.push_back(-inf);
+            ubg_.push_back(0);
+            equality_.push_back(false);
+        }
+    }
+```
+
+主要从两个给定的函数容器 `equality_constrinats_` 和 `inequality_constrinats_` 中进行调用
+
+在 `DiffDriveProb` 中添加的障碍约束就属于等式约束
+
+```cpp
+add_constraint(ConstraintType::Inequality,
+std::bind(&DiffDriveProb::obstacle1, this, std::placeholders::_1, std::placeholders::_2));
+```
+
+###### 终端误差及约束
+
+```cpp
+J += prob_->terminal_cost(Xs[N]);
+w.push_back(Xs[N]);
+for (size_t l = 0; l < nx; l++) {
+    lbw_.push_back(x_bounds[N - 1].first[l]);
+    ubw_.push_back(x_bounds[N - 1].second[l]);
+}
+```
+
+终端误差单独拎出来处理
+
+###### Casadi 求解最终格式配置
+
+```cpp
+std::vector<MX> params;
+for (auto &[param_name, param_pair] : prob_->param_list_)
+    params.push_back(param_pair.mx);
+
+casadi_prob_ = {{"x", vertcat(w)}, {"f", J}, {"g", vertcat(g)}, {"p", vertcat(params)}};
+if (solver_name_ == "fatrop" && config_["structure_detection"] == "auto") {
+    config_["equality"] = equality_;
+}
+solver_ = nlpsol("solver", solver_name_, casadi_prob_, config_);
+```
+
+收集问题参数（符号变量）
+
+定义 CasADi 优化问题结构（`casadi_prob_`）
+
+创建优化求解器（`solver_`）
+
+##### 求解函数
 
 ## 参考
 
