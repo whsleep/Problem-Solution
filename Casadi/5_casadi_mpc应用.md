@@ -693,6 +693,62 @@ solver_ = nlpsol("solver", solver_name_, casadi_prob_, config_);
 
 ##### 求解函数
 
+输入为给定的状态初值 $\mathrm{x}_0$ 和配置参数
+
+首先会更新参数
+
+```cpp
+for (auto &[param_name, param] : new_param_list) {
+    prob_->param_list_[param_name].dm = param;
+}
+```
+
+再对第一个决策变量即初值 $\mathrm{x}_0$ 进行更新
+
+```cpp
+const size_t nx = prob_->nx();
+const size_t nu = prob_->nu();
+for (size_t l = 0; l < nx; l++) {
+    lbw_[l] = x0[l];
+    ubw_[l] = x0[l];
+}
+```
+
+规范化求解函数的输入 
+
+```cpp
+DMDict arg;
+arg["x0"] = w0_;
+arg["lbx"] = vertcat(lbw_);
+arg["ubx"] = vertcat(ubw_);
+arg["lbg"] = vertcat(lbg_);
+arg["ubg"] = vertcat(ubg_);
+arg["lam_x0"] = lam_x0_;
+arg["lam_g0"] = lam_g0_;
+param_vec_.clear();
+param_vec_.reserve(prob_->param_list_.size());
+for (auto &[param_name, param_pair] : prob_->param_list_) {
+    param_vec_.push_back(param_pair.dm);
+}
+arg["p"] = vertcat(param_vec_);
+```
+
+`lam_x0_` 和 `lam_g0_` 拉格朗日乘子的初始猜测。这些乘子在求解过程中用于处理约束，并且在这里作为“热启动”的输入，可以显著加快求解速度。
+
+
+```cpp
+DMDict sol = solver_(arg);
+
+w0_ = sol["x"];
+lam_x0_ = sol["lam_x"];
+lam_g0_ = sol["lam_g"];
+
+Eigen::VectorXd opt_u(nu);
+std::copy(w0_.ptr() + nx, w0_.ptr() + nx + nu, opt_u.data());
+```
+
+保存求解结果以供“热启动”, 提取最近一次的最优控制输入
+
 ## 参考
 
 - [simple_casadi_mpc
