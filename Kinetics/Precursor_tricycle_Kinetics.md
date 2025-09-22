@@ -287,18 +287,105 @@ $levenbergIter=9$
 
 **前轮转角**：
 
+当前轮转向角为 $\gamma = \plusmn 90°$ 时，运动学模型退化为
+
 $$
-\gamma = atan(\frac{\omega d}{v_f})
+\begin{align}
+\dot{x}&=0\\
+\dot{y}&=0\\
+\dot{\theta}&=\frac{v_f}{d}\\
+\end{align}
+$$
+
+完全退化为一个纯旋转运动，为了适用这种退化，使用如下公式反推转向角
+
+$$
+\gamma = atan(\frac{\omega d}{v})
 $$
 
 > 当前轮转角允许范围在 $-\pi/2\sim\pi/2$ 时
 
-需要考虑到两个特殊情况
+需要考虑到特殊情况
 
-- $v_f$ 逼近 0
-- 相邻两个 $pose$ 的距离极小
+- $\gamma$ 等于正负 $90°$
+  
+  这也是转向角使用 $atan$ 的原因，因为其值域在 $[-\pi/2,\pi/2]$ 范围内，符合转向角范围；
+  
+  但需要注意此时的 $v$ 极小，因为近似为纯旋转运动；也仍需注意 $v_f$ 这时取决于前轮的弧长，而前轮弧长又取决于整体的转向角 $\Delta \theta$，这时的难点在于 $v_f$ 的判定，因为相邻位姿的 $pose$ 极其接近，如果定位出现噪声，极其容易引起 $v_f$ 符号的突变，所以当两个相邻位姿接近时，需要更换 $v_f$ 符号的判定方式
 
-设置合适的阈值,在上述两种情况下直接设置为 $-\pi/2$ 或者 $\pi/2$
+  在此之前，需要明确车辆整体的旋转方向由前轮转角和前轮线速度的方向决定，为了简化过程，这里简化 $\gamma$ 方向的获取，这样可以解决极端情况下原运动学模型和退化后模型的衔接问题
+
+  $$
+  \gamma = atan(\frac{\omega d}{||v||})
+  $$ 
+
+  即 $\gamma$ 方向完全由，$\omega$ 决定，即使 $||v||=0$ 也不会影响 $\gamma$ 符号的判定 
+
+  在此基础上，$v_f$ 符号的判定，完全可以交予两个相邻前轮位姿来计算
+
+```cpp
+  void TebOptimalPlanner::extractVelocity(const PoseSE2 &pose1, const PoseSE2 &pose2, double dt, double &vx, double &vy, double &omega) const
+  {
+    if (dt == 0)
+    {
+      vx = 0;
+      vy = 0;
+      omega = 0;
+      return;
+    }
+    /* */
+    const double d = 0.2;
+    const auto &pose1_raw = pose1;
+    const auto &pose2_raw = pose2;
+    // const auto &pose1_raw = PoseSE2(0,0, 0.0);
+    // const auto &pose2_raw = PoseSE2(0,0, -0.5);
+    // 计算前端修正后的位姿
+    Eigen::Vector2d pose1_front(
+        pose1_raw.x() + d * std::cos(pose1_raw.theta()),
+        pose1_raw.y() + d * std::sin(pose1_raw.theta()));
+
+    Eigen::Vector2d pose2_front(
+        pose2_raw.x() + d * std::cos(pose2_raw.theta()),
+        pose2_raw.y() + d * std::sin(pose2_raw.theta()));
+    const Eigen::Vector2d deltaS = pose2_front - pose1_front;
+
+    // 计算前轮弧长
+    double dist = deltaS.norm();
+    double angle_diff = g2o::normalize_theta(pose2_raw.theta() - pose1_raw.theta());
+    if (angle_diff > 1e-4)
+    {
+      double radius = dist / (2 * sin(angle_diff / 2));
+      dist = fabs(angle_diff * radius); 
+    }
+
+    // 计算前轮线速度(绝对值)
+    double vf = dist / dt;
+
+    // 计算转向角(已经确定方向)
+    Eigen::Vector2d deltaS_rear = pose2_raw.position() - pose1_raw.position();
+    omega = angle_diff / dt;
+    double vel = deltaS_rear.norm() / dt;
+    if(vel < 1e-4) vel = 1e-4; // 防止除零
+    double gamma = std::atan(omega * d / vel);
+
+    // 使用前轮位姿判断前轮线速度方向
+    double direction = deltaS.dot(Eigen::Vector2d(
+        std::cos(pose1_raw.theta()+gamma),
+        std::sin(pose1_raw.theta()+gamma)));
+    vf *= (direction >= 0) ? 1.0 : -1.0;
+
+    ROS_INFO("dir: %.2f,vf: %.2f,vel: %.2f,omega: %.2f,gamma: %.2f",direction,vf,vel,omega,gamma);
+
+    vx = vf;
+    omega = gamma;
+  }
+```
+
+### 后续问题
+
+后续硬件组安装前轮刹车，使得前轮减速的响应极好。
+
+而TEB本身作为一种相对不严格的非线性最小二乘问题，其输出的位姿也会出现轻微跳变，进而导致输出控制指令可能出现极短暂的符号跳变，未加刹车前，可以依靠物理惯性忽略这个跳变，但安装完刹车后，极短的符号跳变得到实车的响应，进而实车大幅转向过程中出现抖动，无法正常进行大幅度转向。
 
 参考:
 
