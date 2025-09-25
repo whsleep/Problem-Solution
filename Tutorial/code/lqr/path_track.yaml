@@ -1,0 +1,22 @@
+world:
+  height: 40
+  width: 80
+  step_time: 0.1
+  sample_time: 0.1
+  offset: [-40, -5]
+  collision_mode: 'stop'  # 'stop', 'unobstructed', 'reactive'
+  control_mode: 'auto'  # 'keyboard', 'auto'
+
+robot:
+  - kinematics: {name: 'acker'} 
+    shape: {name: 'rectangle', length: 4.6, width: 1.6, wheelbase: 3}
+    state: [0, 0, 0, 0] 
+    goal: [-2, 0, 0] 
+    vel_min: [-5, -1]
+    vel_max: [5, 1]
+    goal_threshold: 0.3
+    plot:
+      show_trail: True
+      show_goal: True
+
+
