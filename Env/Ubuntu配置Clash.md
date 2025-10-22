@@ -132,3 +132,19 @@ dns:
 ```
 
 保存后重新打开 `clash` 进行测试。
+
+# 图形化 clash_verge
+
+[下载地址](https://clash-verge.org/zh-CN/windows-mac-linux/mihomo-party)
+
+安装
+
+```shell
+sudo apt install -y ./your_dep_file.dep
+```
+
+启动 
+
+```shell
+mihomo-party
+```
